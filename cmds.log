@@ -1,0 +1,21 @@
+    1  vi author_to_tweeter.sh
+    2  chmod 777 author_to_tweeter.sh
+    3  echo -e "hashtag_H\tcluster_C_leader(userID)\trelative_frequency_H_C\tfrequency_H_in_C\tfrequency_H_overall\tcount_H_in_C\tcount_hashtags_in_C\tcount_H_entire_dataset\tcount_hashtags_entire_dataset retweets_hashtag_freqs.tsv" > retweets_hashtag_freqs.tsv
+    4  cat retweets_hashtag_freqs.tsv > replies_hashtag_freqs.tsv
+    5  awk -F "\t" 'NR==FNR {id[$2]=$1; id[$1]=$2; next } ($2 in id && $6 in id) {print $0}' 3_or_more_replies.tsv downloaded_tweets_extend_original_nolf2_NOBOT.tsv > replies_in_C
+    6  awk -F "\t" '{print $4}' downloaded_tweets_extend_original_nolf2_NOBOT.tsv | tr ',' '\n' | tr -d '\"'   | tr '[:upper:]' '[:lower:]' | sed '/^$/d'| sort | uniq > hashtags.txt
+    7  ./author_to_tweeter.sh 3_or_more_replies replies_hashtag_freqs.tsv replies_in_C
+    8  sort -nrk 3 replies_hashtag_freqs.tsv | head -n 5
+    9  grep retweeted downloaded_tweets_extend_nolf2_NOBOT.tsv | sed "s/\[<ReferencedTweet id=//g" | sed "s/ type=retweeted\]//g" | awk -F '\t' '{print $1 "\t" $5}' | sort | uniq > rtID_to_ogID.tsv 
+   10  cut -f 2 rtID_to_ogID.tsv > retweeted_ids.txt
+   11  fgrep -f retweeted_ids.txt downloaded_tweets_extend_original_nolf2_NOBOT.tsv | awk -F "\t" '{print $2}' > userids_retweets3_fgrep.txt
+   12  fgrep -f userids_retweets3_fgrep.txt downloaded_tweets_extend_original_nolf2_NOBOT.tsv  | cut -f 1,2 > ogID_to_userID.tsv
+   13  awk -F "\t" '{print $1}' ogID_to_userID.tsv > original_tweet_ID
+   14  grep retweeted downloaded_tweets_extend_nolf2_NOBOT.tsv | sed "s/\[<ReferencedTweet id=//g" | sed "s/ type=retweeted\]//g" | grep -Ff original_tweet_ID > all_retweeted_tweets
+   15  tail -n +2 original_tweet_ID > original_tweet_ID
+   16  awk -F "\t" 'NR==FNR {id[$1]=$1; id[$2]=$2; next } ($5 in id) {$5 = id[$2]; print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5}' ogID_to_userID.tsv all_retweeted_tweets > rt_auth.tsv
+   17  awk -F "\t" 'NR==FNR {id[$1]=$1; id[$2]=$2; next } ($5 in id && $2 in id) {print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5}' 3_or_more_retweets.tsv rt_auth.tsv > retweets_in_C
+   18  head -n 2 retweets_in_C 
+   19  ./author_to_tweeter.sh 3_or_more_retweets.tsv retweets_hashtag_freqs.tsv retweets_in_C
+   20  sort -nrk 3 retweets_hashtag_freqs.tsv | head -n 5
+   21  history > cmds.log
